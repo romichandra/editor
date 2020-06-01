@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layoutMain"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:context=".MainActivity">
+
+        <EditText
+            android:id="@+id/text"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:padding="8dp"
+            android:gravity="start"
+            android:hint="Enter text here!"
+            android:background="@drawable/et_bg"
+            android:layout_margin="16dp"
+            android:layout_marginTop="75dp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/btnUndo"
+            app:layout_constraintTop_toBottomOf="@+id/textWordCount"
+            app:layout_constraintLeft_toLeftOf="parent"
+            android:text="UNDO"
+            android:enabled="false"
+            android:layout_marginTop="32dp"
+            android:layout_marginLeft="32dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/btnSave"
+            app:layout_constraintTop_toBottomOf="@+id/textWordCount"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            android:text="SAVE"
+            android:enabled="false"
+            android:layout_marginTop="32dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/btnRedo"
+            app:layout_constraintTop_toBottomOf="@+id/textWordCount"
+            app:layout_constraintRight_toRightOf="parent"
+            android:text="REDO"
+            android:enabled="false"
+            android:layout_marginTop="32dp"
+            android:layout_marginRight="32dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/textWordCount"
+            android:layout_marginTop="32dp"
+            android:text="0"
+            app:layout_constraintTop_toBottomOf="@+id/text"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            android:textColor="#000"
+            android:background="#fff"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>
