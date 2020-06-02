@@ -11,6 +11,7 @@ import java.util.LinkedList;
  * @since 30, May, 2020
  */
 public final class CTEditHistory {
+    // current edit item position, changes with undo, redo and trim
     public int mPosition = 0;
     public int MAX_HISTORY_SIZE = -1;
 
@@ -26,6 +27,7 @@ public final class CTEditHistory {
             mHistory.removeLast();
         }
         mHistory.add(item);
+        // increase position if adding item
         mPosition++;
 
         if (MAX_HISTORY_SIZE >= 0) {
@@ -43,15 +45,18 @@ public final class CTEditHistory {
     public void trimHistory() {
         while (mHistory.size() > MAX_HISTORY_SIZE) {
             mHistory.removeFirst();
+            // decrease position if removing item
             mPosition--;
         }
 
+        // safe check if position goes negative make it 0
         if (mPosition < 0) {
             mPosition = 0;
         }
     }
 
     public CTEditorHistoryItem getCurrent() {
+        // safe position overflow check
         if (mPosition == 0) {
             return null;
         }
@@ -59,6 +64,7 @@ public final class CTEditHistory {
     }
 
     public CTEditorHistoryItem getPrevious() {
+        // safe position overflow check
         if (mPosition == 0) {
             return null;
         }
@@ -67,6 +73,7 @@ public final class CTEditHistory {
     }
 
     public CTEditorHistoryItem getNext() {
+        // safe position overflow check
         if (mPosition >= mHistory.size()) {
             return null;
         }

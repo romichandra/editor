@@ -171,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         try {
+            // not working
             mHelper.restoreEditorHistoryState(mPrefs, SAVE_NOTE_PREFIX);
             updateWordCount(mEditText);
         } catch (Exception e) {}

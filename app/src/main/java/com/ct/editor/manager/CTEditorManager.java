@@ -6,6 +6,7 @@ import android.text.Selection;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.style.UnderlineSpan;
+import android.util.Log;
 import android.widget.EditText;
 
 /**
@@ -53,7 +54,7 @@ public class CTEditorManager {
     }
 
     /**
-     * @return true if undo option is present in EditHistory
+     * @return true if undo option is present in EditHistory. Minimum one item should be present in edit history.
      */
     public boolean getCanUndo() {
         return (mCTEditHistory.mPosition > 0);
@@ -69,17 +70,22 @@ public class CTEditorManager {
         }
 
         Editable text = mEditText.getEditableText();
+        // start cursor pos for the change
         int start = edit.mmStart;
+        // current end after the text change was done
         int end = start + (edit.mmAfter != null ? edit.mmAfter.length() : 0);
 
         isHistoryAvailable = true;
         text.replace(start, end, edit.mmBefore);
         isHistoryAvailable = false;
 
+        // This will get rid of underlines inserted when editor tries to come
+        // up with a suggestion. bug in case of special fonts/spans
         for (Object o : text.getSpans(0, text.length(), UnderlineSpan.class)) {
             text.removeSpan(o);
         }
 
+        // move the cursor
         Selection.setSelection(text, edit.mmBefore == null ? start : (start + edit.mmBefore.length()));
     }
 
@@ -108,11 +114,12 @@ public class CTEditorManager {
         isHistoryAvailable = false;
 
         // This will get rid of underlines inserted when editor tries to come
-        // up with a suggestion.
+        // up with a suggestion. bug in case of special fonts/spans
         for (Object o : text.getSpans(0, text.length(), UnderlineSpan.class)) {
             text.removeSpan(o);
         }
 
+        // move the cursor
         Selection.setSelection(text, edit.mmAfter == null ? start
                 : (start + edit.mmAfter.length()));
     }
@@ -142,6 +149,8 @@ public class CTEditorManager {
 
             i++;
         }
+
+        //issue should have editor.commit
     }
 
     /**
@@ -216,53 +225,73 @@ public class CTEditorManager {
     }
 
     private final class EditTextChangeListener implements TextWatcher {
+        private final String TAG = EditTextChangeListener.class.getSimpleName();
         private CharSequence mBeforeChange;
         private CharSequence mAfterChange;
         private ActionType lastActionType = ActionType.NOT_DEF;
         private long lastActionTime = 0;
 
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            // block check to not update mBeforeChange while undo/redo, any history operation is already executing
             if (isHistoryAvailable) {
                 return;
             }
 
             mBeforeChange = s.subSequence(start, start + count);
+            Log.d(TAG, "beforeTextChanged, s: " + s + ", start: " + start + ", count: " + count + ", after: " + after + ", mBeforeChange: " + mBeforeChange);
         }
 
         public void onTextChanged(CharSequence s, int start, int before, int count) {
+            // block check to not update mAfterChange while undo/redo, any history operation is already executing
             if (isHistoryAvailable) {
                 return;
             }
 
             mAfterChange = s.subSequence(start, start + count);
+            Log.d(TAG, "onTextChanged, s: " + s + ", start: " + start + ", count: " + count + ", mAfterChange: " + mAfterChange);
             makeBatch(start);
         }
 
+        /**
+         * optimization to save fast changes in one go. changes made in less than one second are batched, unlike a character per edit
+         * @param start
+         */
         private void makeBatch(int start) {
             ActionType at = getActionType();
             CTEditorHistoryItem CTEditorHistoryItem = mCTEditHistory.getCurrent();
             if ((lastActionType != at || ActionType.PASTE == at || System.currentTimeMillis() - lastActionTime > 1000) || CTEditorHistoryItem == null) {
+                // for single character
                 mCTEditHistory.add(new CTEditorHistoryItem(start, mBeforeChange, mAfterChange));
+                Log.d(TAG, "makeBatch, start: " + start + ", at: " + at + ", CTEditorHistoryItem: " + "null" + ", lastActionType: " + lastActionType + ", lastActionTime: " + lastActionTime);
             } else {
+                // to make batch as history like swipe, paste, type fast, delete fast: buffer period is 1000ms
                 if (at == ActionType.DELETE) {
                     CTEditorHistoryItem.mmStart = start;
+                    // batch the characters
                     CTEditorHistoryItem.mmBefore = TextUtils.concat(mBeforeChange, CTEditorHistoryItem.mmBefore);
                 } else {
+                    // batch the characters
                     CTEditorHistoryItem.mmAfter = TextUtils.concat(CTEditorHistoryItem.mmAfter, mAfterChange);
                 }
+                Log.d(TAG, "makeBatch, start: " + start + ", at: " + at + ", CTEditorHistoryItem: " + CTEditorHistoryItem.toString() + ", lastActionType: " + lastActionType + ", lastActionTime: " + lastActionTime);
             }
             lastActionType = at;
             lastActionTime = System.currentTimeMillis();
+            Log.d(TAG, "makeBatch, start: " + start + ", at: " + at + ", lastActionType: " + lastActionType + ", lastActionTime: " + lastActionTime);
         }
 
         private ActionType getActionType() {
+            ActionType result;
             if (!TextUtils.isEmpty(mBeforeChange) && TextUtils.isEmpty(mAfterChange)) {
-                return ActionType.DELETE;
+                result = ActionType.DELETE;
             } else if (TextUtils.isEmpty(mBeforeChange) && !TextUtils.isEmpty(mAfterChange)) {
-                return ActionType.INSERT;
+                result = ActionType.INSERT;
             } else {
-                return ActionType.PASTE;
+                result = ActionType.PASTE;
             }
+
+            Log.d(TAG, "getActionType, result: " + result);
+            return  result;
         }
 
         public void afterTextChanged(Editable s) {
